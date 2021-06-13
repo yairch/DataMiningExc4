@@ -1,4 +1,3 @@
-from model import *
 from tkinter import Tk, Label, Button, Entry, END, W
 from tkinter import messagebox
 import tkinter as tk
@@ -68,8 +67,14 @@ class naiveBayesGUI:
 
                 files = os.listdir(self.path)
                 if train_filename in files and test_filename \
-                        in test_filename in files and structure_filename in files:
+                        in files and structure_filename in files:
                     return True
+                else:
+                    messagebox.showerror(
+                        title="Naive Bayes Classifier",
+                        message="Error occurred when opening directory. Not all needed files present")
+                    self.path_entry.delete(0, END)
+                    return False
             except:
                 messagebox.showerror(
                     title="Naive Bayes Classifier",
