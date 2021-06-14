@@ -1,12 +1,24 @@
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import KBinsDiscretizer, LabelEncoder
 import pandas as pd
+from os.path import join as path_join
 
 M_ESTIMATOR = 2
-
-model = MultinomialNB(alpha=M_ESTIMATOR)
-
 pd.set_option('display.max_columns', None)
+
+
+def import_data(directory_path, filename):
+    full_path = path_join(directory_path, filename)
+    try:
+        resource = pd.read_csv(full_path)
+
+        if resource is not None and isinstance(resource, pd.DataFrame) \
+                and not (resource.empty or len(resource.columns) == 0):
+            return resource
+        else:
+            return False
+    except pd.errors.EmptyDataError:
+        return False
 
 
 def extract_feature(line, feature_structure):
@@ -23,13 +35,15 @@ def extract_feature(line, feature_structure):
     feature_structure[feature] = values
 
 
-def read_structure(path):
+def read_structure(directory_path, filename):
     """
-    :param path: path for the file to be read
+    :param directory_path: path for the file to be read
+    :param filename: structure file filename in directory
     :return: feature_structure: dict of attributes and their possible values
     """
     feature_structure = {}
-    with open(path, 'r') as structure_file:
+    full_path = path_join(directory_path, filename)
+    with open(full_path, 'r') as structure_file:
         for line in structure_file.readlines():
             extract_feature(line, feature_structure)
 
@@ -103,33 +117,96 @@ def classify_with_naive_bayes(classification_model, testset, feature_structure):
     res = classification_model.predict(testset[predictores])
     return res
 
-####### add function to write results into file##########
 
-###### call the training function in GUI.py and send all parameters with it #########
+def refactor_prediction_labels(predictions, positive=1):
+    """
+    Refactor prediction labels for class attribute. yes = 1; no = 0.
+    :param predictions: raw predictions
+    :type predictions: list
+    :param positive: value considered positive to be labeled as yes. Default is 1
+    :type positive: int
+    :return: relabeled predictions
+    :rtype: list
+    """
 
-##### call funciton for classify ################
-
-##### IN GUI - add message after successful classification ###############
+    return ['yes' if prediction == positive else 'no' for prediction in predictions]
 
 
-df = pd.read_csv("D:\\G I L A\\data science\\211702782_206085532\\DataMiningExc4\\train.csv")
-#
-struct = read_structure("D:\\G I L A\\data science\\211702782_206085532\\DataMiningExc4\\Structure.txt")
-print("Struct:")
-print(struct)
-# print("with missing:")
+def save_predictions(path, predictions, positive=1.0):
+    """
+    Writes predictions to output file "output.txt" in given path directory enumerated from 1.
+    Predictions saved in format: yes = 1; no = 0.
+    :param path: path to working directory
+    :type path: string
+    :param predictions: result classified predictions
+    :type predictions: iterable
+    :param positive: value considered positive to be labeled as yes. Default is 1
+    :type positive: int
+    """
+
+    refactored_predictions = refactor_prediction_labels(predictions.tolist(), positive=positive)
+    with open(path_join(path, 'output.txt'), 'w') as output:
+        outputs = [str(i) + ' ' + str(prediction) for i, prediction in enumerate(refactored_predictions, 1)]
+        output.write('\n'.join(outputs))
+
+
+def build_model(train_set, feature_structure, n_bins=10):
+    """
+    Build and train a Naive Bayes Multinomial model with m-estimator = 2 according to given parameters.
+    :param train_set: dataset to train on
+    :type train_set: pandas.DataFrame
+    :param feature_structure: dict of format: {feature: [values]} according to data structure file
+    :type feature_structure: dict
+    :param n_bins: number of bins for equal width discretization
+    :type n_bins: int
+    :return: trained model
+    :rtype: sklearn.naive_bayes.MultinomialNB
+    """
+
+    fill_missing_values(train_set, feature_structure)
+    discretize(n_bins=n_bins, dataset=train_set, feature_structure=feature_structure)
+    model = MultinomialNB(alpha=M_ESTIMATOR)
+    return train_naive_bayes_model(model=model, dataset=train_set, feature_structure=feature_structure)
+
+
+def classify(model, test_set, feature_structure, n_bins=10):
+    """
+    Preprocess test set and make predictions for the test set
+    :param model: trained naive bayes model
+    :type model: sklearn.naive_bayes.MultinomialNB
+    :param test_set: dataset to make predictions on
+    :type test_set: pd.DataFrame
+    :param feature_structure: dict of format: {feature: [values]} according to data structure file
+    :type feature_structure: dict
+    :param n_bins: number of bins for equal width discretization
+    :type n_bins: int
+    :return: classified predictions
+    :rtype: numpy.ndarray
+    """
+    fill_missing_values(test_set, feature_structure)
+    discretize(n_bins=n_bins, dataset=test_set, feature_structure=feature_structure)
+    return classify_with_naive_bayes(classification_model=model, testset=test_set, feature_structure=feature_structure)
+
+# df = pd.read_csv("D:\\G I L A\\data science\\211702782_206085532\\DataMiningExc4\\train.csv")
+# #
+# struct = read_structure("D:\\G I L A\\data science\\211702782_206085532\\DataMiningExc4\\Structure.txt")
+# print("Struct:")
+# print(struct)
+# # print("with missing:")
+# # print(df.head())
+# print("no missing:")
+# fill_missing_values(df, struct)
 # print(df.head())
-print("no missing:")
-fill_missing_values(df, struct)
-print(df.head())
-print("discrete:")
-discretize(n_bins=10, dataset=df, feature_structure=struct)
-print(df.head())
-trained_model = train_naive_bayes_model(model, df, struct)
-
-### test model ###
-
-test_df = pd.read_csv("D:\\G I L A\\data science\\211702782_206085532\\DataMiningExc4\\test.csv")
-fill_missing_values(test_df, struct)
-discretize(n_bins=10, dataset=test_df, feature_structure=struct)
-classify_with_naive_bayes(trained_model, test_df, struct)
+# print("discrete:")
+# discretize(n_bins=10, dataset=df, feature_structure=struct)
+# print(df.head())
+# model = MultinomialNB(alpha=M_ESTIMATOR)
+#
+# trained_model = train_naive_bayes_model(model, df, struct)
+#
+# ### test model ###
+#
+# test_df = pd.read_csv("D:\\G I L A\\data science\\211702782_206085532\\DataMiningExc4\\test.csv")
+# fill_missing_values(test_df, struct)
+# discretize(n_bins=10, dataset=test_df, feature_structure=struct)
+# classify_with_naive_bayes(trained_model, test_df, struct)
