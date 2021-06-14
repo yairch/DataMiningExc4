@@ -186,27 +186,3 @@ def classify(model, test_set, feature_structure, n_bins=10):
     fill_missing_values(test_set, feature_structure)
     discretize(n_bins=n_bins, dataset=test_set, feature_structure=feature_structure)
     return classify_with_naive_bayes(classification_model=model, testset=test_set, feature_structure=feature_structure)
-
-# df = pd.read_csv("D:\\G I L A\\data science\\211702782_206085532\\DataMiningExc4\\train.csv")
-# #
-# struct = read_structure("D:\\G I L A\\data science\\211702782_206085532\\DataMiningExc4\\Structure.txt")
-# print("Struct:")
-# print(struct)
-# # print("with missing:")
-# # print(df.head())
-# print("no missing:")
-# fill_missing_values(df, struct)
-# print(df.head())
-# print("discrete:")
-# discretize(n_bins=10, dataset=df, feature_structure=struct)
-# print(df.head())
-# model = MultinomialNB(alpha=M_ESTIMATOR)
-#
-# trained_model = train_naive_bayes_model(model, df, struct)
-#
-# ### test model ###
-#
-# test_df = pd.read_csv("D:\\G I L A\\data science\\211702782_206085532\\DataMiningExc4\\test.csv")
-# fill_missing_values(test_df, struct)
-# discretize(n_bins=10, dataset=test_df, feature_structure=struct)
-# classify_with_naive_bayes(trained_model, test_df, struct)
