@@ -189,5 +189,3 @@ class naiveBayesGUI:
 root = Tk()
 my_gui = naiveBayesGUI(root)
 root.mainloop()
-
-# Todo: disable build and classify
